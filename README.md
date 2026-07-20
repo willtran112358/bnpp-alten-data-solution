@@ -23,6 +23,8 @@
 4. [JD mapping & interview pitch](#4-jd-mapping--interview-pitch)
 5. [Repo map](#5-repo-map)
 
+**Concepts:** [Data Vault vs Kimball in banking](docs/03-dv-vs-kimball.md) — vault integrates/historize; stars consume KPIs (both coexist).
+
 ---
 
 ## 1. Business
@@ -375,6 +377,38 @@ flowchart TB
 
 Detail: [`docs/02-solution-design.md`](docs/02-solution-design.md)
 
+### 2.7 Data Vault vs Kimball (banking)
+
+In a bank EDW they usually **both** exist — **different jobs**; **vault feeds the stars**.
+
+| | **Hubs / Links / Sats (DV)** | **Star schema (Kimball)** |
+|---|--------------------------------|---------------------------|
+| **Job** | Integrate & historize many sources | Report KPIs fast |
+| **Audience** | Data engineers, audit, risk IT | Analysts, risk / finance BI |
+| **History** | Full source-aware versions | Often SCD Type 2 on dims only |
+
+```mermaid
+flowchart LR
+    classDef src fill:#FFCDD2,stroke:#C62828,stroke-width:2px,color:#B71C1C
+    classDef dv fill:#BBDEFB,stroke:#1565C0,stroke-width:2px,color:#0D47A1
+    classDef star fill:#C8E6C9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20
+    classDef biz fill:#FFE0B2,stroke:#EF6C00,stroke-width:2px,color:#E65100
+
+    CORE["Core banking"]:::src
+    CRM["CRM / AML / Cards"]:::src
+    DV["DV: Hub / Link / Sat<br/>audit · lineage · multi-source"]:::dv
+    STAR["Star: Fact + Dims<br/>dashboards · regulatory packs"]:::star
+    BI["Risk · Finance · GM BI"]:::biz
+
+    CORE --> DV
+    CRM --> DV
+    DV --> STAR --> BI
+```
+
+> **DV** = integration/history (*what did we know, from which source, when?*) · **Star** = consumption (*NPL, balances, CPC by day*).
+
+Full write-up: [`docs/03-dv-vs-kimball.md`](docs/03-dv-vs-kimball.md)
+
 ---
 
 ## 3. Sample engineering code
@@ -451,7 +485,8 @@ bnpp-alten-data-solution/
 ├── README.md                          ← you are here (Business · Design · Code)
 ├── docs/
 │   ├── 01-business.md
-│   └── 02-solution-design.md
+│   ├── 02-solution-design.md
+│   └── 03-dv-vs-kimball.md            ← DV hubs/links/sats vs star schema
 ├── src/
 │   ├── sql/                           ← Oracle DV2.0 + marts + DQ
 │   ├── python/                        ← ingest + pytest

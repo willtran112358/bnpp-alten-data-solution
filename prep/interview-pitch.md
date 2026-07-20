@@ -14,7 +14,7 @@ I build **Oracle Enterprise DWH** with **Data Vault 2.0** so group marketing and
 
 | Question | Anchor answer |
 |----------|---------------|
-| Why DV2.0 vs Kimball only? | Audit / source history in RV; marts still dimensional for BI |
+| Why DV2.0 vs Kimball only? | Both coexist: DV integrates/historize; Kimball marts for BI — see [`docs/03-dv-vs-kimball.md`](../docs/03-dv-vs-kimball.md) |
 | Multi-active satellite? | Grain keys in PK with load_dts; e.g. device×geo metrics |
 | Hash collision / unicode BK? | UTF-8 normalize + UPPER/TRIM; document BK rules per source |
 | How do you test? | Pytest on hash helpers + SQL non-regression on row counts / checksums |

@@ -105,6 +105,10 @@ Suggested tools: Oracle `DBMS_SCHEDULER`, Control-M, or Airflow calling PL/SQL e
 | Orphan links | 0 | 0 |
 | Mart publish | after DQ green | after DQ green |
 
-## 10. Reference diagrams
+## 10. Data Vault vs Kimball
+
+Banking EDW: **DV (hubs/links/sats)** for integration & audit history; **Kimball stars** for KPI consumption. Vault feeds marts — see [`03-dv-vs-kimball.md`](03-dv-vs-kimball.md).
+
+## 11. Reference diagrams
 
 See main [README — Solution design](../README.md#2-solution-design) for colored architecture, ER, sequence, and CET gantt diagrams.
