@@ -70,6 +70,113 @@ Keys & relationships stay stable;
 changing attributes version in satellites with load_dts + record_source.
 ```
 
+## DV 1.0 vs DV 2.0 — sample ER (same banking grain)
+
+Same pattern (Customer–Account). Difference is **how keys & change detection work**.
+
+| | **DV 1.0** | **DV 2.0** |
+|---|------------|------------|
+| Hub / link PK | Sequence / surrogate (`*_SQN`) | **Hash key** (`*_HK`) from business key |
+| Satellite change | Column compare (or optional checksum) | **`HASHDIFF`** |
+| Loads | Often more sequential | Built for **parallel** loads |
+
+### Data Vault 1.0 (sequence keys)
+
+```mermaid
+erDiagram
+    HUB_CUSTOMER ||--o{ LINK_CUSTOMER_ACCOUNT : "owns"
+    HUB_ACCOUNT ||--o{ LINK_CUSTOMER_ACCOUNT : "owned_by"
+    HUB_CUSTOMER ||--o{ SAT_CUSTOMER_ATTR : "history"
+    LINK_CUSTOMER_ACCOUNT ||--o{ SAT_ACCOUNT_BALANCE : "history"
+
+    HUB_CUSTOMER {
+        number customer_sqn PK "sequence"
+        string customer_bk
+        timestamp load_dts
+        string record_source
+    }
+    HUB_ACCOUNT {
+        number account_sqn PK "sequence"
+        string account_bk
+        timestamp load_dts
+        string record_source
+    }
+    LINK_CUSTOMER_ACCOUNT {
+        number link_sqn PK "sequence"
+        number customer_sqn FK
+        number account_sqn FK
+        timestamp load_dts
+        string record_source
+    }
+    SAT_CUSTOMER_ATTR {
+        number customer_sqn PK_FK
+        timestamp load_dts PK
+        string name
+        string status
+        string record_source
+    }
+    SAT_ACCOUNT_BALANCE {
+        number link_sqn PK_FK
+        timestamp load_dts PK
+        number balance
+        string currency
+        string record_source
+    }
+```
+
+### Data Vault 2.0 (hash keys + hashdiff)
+
+```mermaid
+erDiagram
+    HUB_CUSTOMER ||--o{ LINK_CUSTOMER_ACCOUNT : "owns"
+    HUB_ACCOUNT ||--o{ LINK_CUSTOMER_ACCOUNT : "owned_by"
+    HUB_CUSTOMER ||--o{ SAT_CUSTOMER_ATTR : "history"
+    LINK_CUSTOMER_ACCOUNT ||--o{ SAT_ACCOUNT_BALANCE : "history"
+
+    HUB_CUSTOMER {
+        raw customer_hk PK "SHA256 of BK"
+        string customer_bk
+        timestamp load_dts
+        string record_source
+    }
+    HUB_ACCOUNT {
+        raw account_hk PK "SHA256 of BK"
+        string account_bk
+        timestamp load_dts
+        string record_source
+    }
+    LINK_CUSTOMER_ACCOUNT {
+        raw link_hk PK "SHA256 of child HKs"
+        raw customer_hk FK
+        raw account_hk FK
+        timestamp load_dts
+        string record_source
+    }
+    SAT_CUSTOMER_ATTR {
+        raw customer_hk PK_FK
+        timestamp load_dts PK
+        raw hashdiff "change detect"
+        string name
+        string status
+        string record_source
+    }
+    SAT_ACCOUNT_BALANCE {
+        raw link_hk PK_FK
+        timestamp load_dts PK
+        raw hashdiff "change detect"
+        number balance
+        string currency
+        string record_source
+    }
+```
+
+```text
+DV1: insert hub → get next SQN → use SQN in links/sats
+DV2: compute HK/HASHDIFF in parallel → insert if new / changed
+```
+
+This repo’s Oracle samples follow **DV 2.0** (`*_HK`, `HASHDIFF`) — see [`src/sql/01_dv2_ddl_ads.sql`](../src/sql/01_dv2_ddl_ads.sql).
+
 ## How this maps in this repo
 
 | Layer in solution | Pattern |
