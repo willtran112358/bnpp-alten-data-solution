@@ -70,6 +70,37 @@ Keys & relationships stay stable;
 changing attributes version in satellites with load_dts + record_source.
 ```
 
+## DV low-level DB sample (visual)
+
+```mermaid
+flowchart LR
+    classDef hub fill:#D6EAF8,stroke:#1F618D,stroke-width:2px,color:#154360
+    classDef link fill:#FAD7A0,stroke:#CA6F1E,stroke-width:2px,color:#7E5109
+    classDef sat fill:#D5F5E3,stroke:#1E8449,stroke-width:2px,color:#145A32
+    classDef note fill:#F4ECF7,stroke:#7D3C98,stroke-width:2px,color:#512E5F
+
+    HC["HUB_CUSTOMER<br/>PK: customer_hk<br/>BK: customer_id<br/>LDTS, RS"]:::hub
+    HA["HUB_ACCOUNT<br/>PK: account_hk<br/>BK: account_id<br/>LDTS, RS"]:::hub
+    LCA["LINK_CUSTOMER_ACCOUNT<br/>PK: link_hk<br/>FK: customer_hk<br/>FK: account_hk<br/>LDTS, RS"]:::link
+    SC["SAT_CUSTOMER_ATTR<br/>PK: customer_hk + load_dts<br/>name, segment, status<br/>hashdiff, RS"]:::sat
+    SBA["SAT_ACCOUNT_BALANCE<br/>PK: link_hk + load_dts<br/>balance, currency<br/>hashdiff, RS"]:::sat
+    N["Stable keys in Hubs/Links<br/>Changing attributes in Sats"]:::note
+
+    HC --> LCA
+    HA --> LCA
+    HC --> SC
+    LCA --> SBA
+    LCA -. business relationship .- N
+    SC -. history .- N
+    SBA -. history .- N
+```
+
+```text
+Hub  = identity
+Link = relationship
+Sat  = time-variant context
+```
+
 ## DV 1.0 vs DV 2.0 — sample ER (same banking grain)
 
 Same pattern (Customer–Account). Difference is **how keys & change detection work**.
